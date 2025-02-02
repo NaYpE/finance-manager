@@ -18,6 +18,7 @@ public class Gasto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -25,6 +26,9 @@ public class Gasto {
     @ManyToOne
     @JoinColumn(name = "tarjeta_id")  // Relación con Tarjeta
     private Tarjeta tarjeta;
+
+    @Column(nullable = true)
+    private  String descripcion;
 
     @Column(nullable = false)
     private String categoria;  // Ejemplo: "Comida", "Hogar", "Seguros"

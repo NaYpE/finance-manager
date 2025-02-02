@@ -3,6 +3,7 @@ package com.naype.finance_manager.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,19 +13,21 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY_STRING = "MiClaveSecretaMuySeguraParaJWTQueDebeSerMuyLarga";
+    private final SecretKey SECRET_KEY;
+    private final long EXPIRATION_TIME;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY_STRING);
-        return Keys.hmacShaKeyFor(keyBytes);
+    public JwtUtil(@Value("${jwt.secret}") String secretKey,
+                   @Value("${jwt.expiration}") long expirationTime) {
+        this.SECRET_KEY = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKey));
+        this.EXPIRATION_TIME = expirationTime;
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String email) {
         return Jwts.builder()
-                .subject(username)
+                .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hora de validez
-                .signWith(getSigningKey(), Jwts.SIG.HS256) // Ahora usamos una SecretKey
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(SECRET_KEY, Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -37,19 +40,34 @@ public class JwtUtil {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey()) // Ahora usamos una SecretKey aquí también
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
     public boolean validateToken(String token, String username) {
-        return extractUsername(token).equals(username) && !isTokenExpired(token);
+        final String tokenUsername = extractUsername(token);
+        return (username.equals(tokenUsername) && !isTokenExpired(token));
     }
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    private Claims extractAllClaims(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(SECRET_KEY)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException e) {
+            throw new JwtAuthenticationException("Invalid JWT token", e);
+        }
+    }
+
+    public static class JwtAuthenticationException extends RuntimeException {
+        public JwtAuthenticationException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

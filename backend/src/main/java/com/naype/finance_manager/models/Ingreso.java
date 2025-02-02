@@ -30,4 +30,7 @@ public class Ingreso {
 
     @Column(nullable = false)
     private LocalDate fecha;
+
+    @Column(nullable = true)
+    private String descripcion;
 }
