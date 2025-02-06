@@ -1,0 +1,23 @@
+
+  /* Contenedor del logo y título */
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Espacio entre el logo y el texto */
+  }
+  
+  /* Logo */
+  .brand-logo {
+    width: 80px;  /* Ajusta el tamaño del logo */
+    height: auto;
+  }
+  
+  /* Texto al lado del logo */
+  .brand-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+ 
+  
